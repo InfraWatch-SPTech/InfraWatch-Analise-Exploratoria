@@ -1,0 +1,285 @@
+---
+title: "Análise Exploratória InfraWatch"
+author: "Ana Carolina Viana Dos Reis"
+date: "2026-10-31"
+output: html_document
+---
+
+# InfraWatch — Análise exploratória em R
+
+## Como os dados fundamentam as métricas e visualizações das dashboards
+
+### 1. Carregar a amostra e conferir a qualidade
+
+```{r echo=FALSE}
+# Conteúdo original de dados_componentes.csv, incluído para facilitar a execução.
+csv_original <- "HOSTNAME;TIMESTAMP;CPU;RAM;DISCO;QTD-PROCESSOS\nLAPTOP-TQPP5J6D;2026-10-05 04:56:37;8.3;87.2;90.2;281\nLAPTOP-TQPP5J6D;2026-10-05 04:56:39;12.6;87.1;90.2;281\nLAPTOP-TQPP5J6D;2026-10-05 04:56:41;26.4;87.2;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:43;16.9;87.0;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:46;12.6;87.1;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:48;10.3;87.3;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:50;12.6;87.2;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:52;15.4;86.6;90.2;280\nLAPTOP-TQPP5J6D;2026-10-05 04:56:54;9.0;86.7;90.2;280"
+
+dados <- read.csv(text = csv_original, sep = ";", dec = ".",
+                  check.names = FALSE, stringsAsFactors = FALSE)
+
+colunas_necessarias <- c("HOSTNAME", "TIMESTAMP", "CPU", "RAM", "DISCO", "QTD-PROCESSOS")
+stopifnot(all(colunas_necessarias %in% names(dados)))
+stopifnot(nrow(dados) >= 3)
+
+dados$TIMESTAMP <- as.POSIXct(dados$TIMESTAMP,
+                              format = "%Y-%m-%d %H:%M:%S",
+                              tz = "America/Sao_Paulo")
+stopifnot(!anyNA(dados))
+stopifnot(length(unique(dados$HOSTNAME)) == 1)
+stopifnot(!any(duplicated(dados[c("HOSTNAME", "TIMESTAMP")])))
+
+componentes <- c("CPU", "RAM", "DISCO")
+for (nome in componentes) {
+  stopifnot(is.numeric(dados[[nome]]))
+  stopifnot(all(is.finite(dados[[nome]])))
+  stopifnot(all(dados[[nome]] >= 0 & dados[[nome]] <= 100))
+}
+stopifnot(is.numeric(dados[["QTD-PROCESSOS"]]))
+stopifnot(all(dados[["QTD-PROCESSOS"]] >= 0))
+
+dados <- dados[order(dados$TIMESTAMP), ]
+rownames(dados) <- NULL
+
+print(dados, row.names = FALSE)
+cat("\nQuantidade de registros:", nrow(dados))
+cat("\nQuantidade de equipamentos:", length(unique(dados$HOSTNAME)))
+cat("\nDuração entre a primeira e a última captura (segundos):",
+    as.numeric(difftime(max(dados$TIMESTAMP), min(dados$TIMESTAMP), units = "secs")))
+cat("\nIntervalos entre capturas (segundos):\n")
+print(as.numeric(diff(dados$TIMESTAMP), units = "secs"))
+```
+
+#### Leitura da amostra
+
+São **9 registros de um único notebook**, em 05/10/2026, entre 04:56:37 e 04:56:54: uma janela de **17 segundos**, com intervalos de 2 ou 3 segundos. Não há valores ausentes nem duplicações da combinação equipamento/instante na amostra.
+
+As medições consecutivas podem depender umas das outras. Por isso, esta análise é descritiva: não representa um dia de operação, outros equipamentos ou toda a infraestrutura. CPU e RAM são percentuais de utilização; **DISCO é ocupação de armazenamento, não velocidade de leitura/escrita**.
+
+O arquivo `processos_ativos.csv` não será cruzado com as capturas: ele não possui timestamp por registro e não informa consumo de CPU/RAM por processo. Assim, não podemos atribuir um pico a um programa específico.
+
+### 2. Indicadores que podemos calcular
+
+Os cards da dashboard específica mostram a **última medição**, e não a média de toda a janela. A tabela abaixo mantém essa distinção. Média e mediana ajudam a interpretar os gráficos históricos; mínimo, máximo e desvio padrão descrevem a variação.
+
+O desvio padrão está em **pontos percentuais (p.p.)**. Para disco, o espaço disponível percentual é `100 - uso`, sem converter esse valor em GB.
+
+```{r echo=FALSE}
+resumo <- data.frame(
+  Componente = componentes,
+  Ultimo_percentual = c(tail(dados$CPU, 1), tail(dados$RAM, 1), tail(dados$DISCO, 1)),
+  Media_percentual = c(mean(dados$CPU), mean(dados$RAM), mean(dados$DISCO)),
+  Mediana_percentual = c(median(dados$CPU), median(dados$RAM), median(dados$DISCO)),
+  Minimo_percentual = c(min(dados$CPU), min(dados$RAM), min(dados$DISCO)),
+  Maximo_percentual = c(max(dados$CPU), max(dados$RAM), max(dados$DISCO)),
+  Desvio_padrao_pp = c(sd(dados$CPU), sd(dados$RAM), sd(dados$DISCO))
+)
+resumo[, 2:7] <- round(resumo[, 2:7], 2)
+print(resumo, row.names = FALSE)
+
+disco_disponivel <- 100 - tail(dados$DISCO, 1)
+cat("\nEspaço disponível na última captura (%):", round(disco_disponivel, 2))
+cat("\nQuantidade de processos: mínimo =", min(dados[["QTD-PROCESSOS"]]),
+    "e máximo =", max(dados[["QTD-PROCESSOS"]]), "\n")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#### Interpretação dos indicadores
+
+Na última captura, os cards calculados com esta amostra seriam **CPU 9,0%**, **RAM 86,7%**, **disco ocupado 90,2%** e **disponível 9,8%**. A média da CPU, porém, foi **13,79%** e o máximo **26,4%**: olhar somente o último valor esconderia o pico registrado anteriormente.
+
+A RAM apresentou média de **87,04%** e o disco permaneceu em **90,2%**. Esses resultados justificam acompanhar os componentes separadamente: uma CPU com baixo uso não significa que memória e armazenamento também estejam com baixa ocupação. A quantidade de processos ficou entre 280 e 281, mas essa contagem não explica sozinha o consumo dos recursos.
+
+### 3. Histogramas — em quais faixas os consumos se concentram?
+
+Um histograma conta quantas capturas ficaram em cada faixa de utilização. A linha vermelha indica a média e a azul indica a mediana. Os eixos de RAM e disco foram ampliados para mostrar os valores desta janela; essa escala reduzida não significa grande variação operacional.
+
+#### 3.1 CPU
+
+```{r echo=FALSE}
+hist(dados$CPU, breaks = seq(0, 30, by = 5),
+     main = "CPU: distribuição das capturas", xlab = "Uso da CPU (%)",
+     ylab = "Quantidade de registros", col = "#98B6F4", border = "white")
+abline(v = mean(dados$CPU), col = "#C0392B", lwd = 2)
+abline(v = median(dados$CPU), col = "#214A9A", lwd = 2, lty = 2)
+legend("topright", legend = c("Média", "Mediana"),
+       col = c("#C0392B", "#214A9A"), lwd = 2, lty = c(1, 2), bty = "n")
+```
+
+**Análise:** quatro das nove capturas ficaram na faixa acima de 10% até 15%, e houve um valor na faixa acima de 25% até 30%. A média de 13,79% ficou acima da mediana de 12,6%, influenciada pelo pico de 26,4%. Não há evidência de CPU próxima de sua capacidade máxima nesta janela.
+
+**Utilidade na dashboard:** o card informa o uso atual; o histórico de CPU permite verificar se um valor alto é pontual ou repetido. O histograma fundamenta essa leitura da frequência dos níveis de consumo, mas não mostra a ordem temporal do pico.
+
+#### 3.2 RAM
+
+```{r echo=FALSE}
+hist(dados$RAM, breaks = seq(86.5, 87.5, by = 0.1),
+     main = "RAM: distribuição das capturas", xlab = "Uso da RAM (%) — escala ampliada",
+     ylab = "Quantidade de registros", col = "#F1D384", border = "white")
+abline(v = mean(dados$RAM), col = "#C0392B", lwd = 2)
+abline(v = median(dados$RAM), col = "#214A9A", lwd = 2, lty = 2)
+legend("topright", legend = c("Média", "Mediana"),
+       col = c("#C0392B", "#214A9A"), lwd = 2, lty = c(1, 2), bty = "n")
+```
+
+**Análise:** os valores de RAM ficaram entre 86,6% e 87,3%, uma amplitude de apenas **0,7 p.p.**, com média de 87,04%. A memória permaneceu com ocupação alta em relação à capacidade total, mesmo sem grandes oscilações. Isso, isoladamente, não comprova falta de memória, lentidão ou necessidade de expansão.
+
+**Utilidade na dashboard:** justifica um card e um histórico próprios para RAM. A ausência de picos não dispensa o acompanhamento de um consumo continuamente elevado. A classificação operacional deve considerar o limite configurado e medições por um período maior, não somente o formato do histograma.
+
+#### 3.3 Disco
+
+```{r}
+hist(dados$DISCO, breaks = seq(89.5, 90.5, by = 0.1),
+     main = "Disco: distribuição da ocupação", xlab = "Disco ocupado (%) — escala ampliada",
+     ylab = "Quantidade de registros", col = "#9DD6BF", border = "white")
+abline(v = mean(dados$DISCO), col = "#C0392B", lwd = 2)
+abline(v = median(dados$DISCO), col = "#214A9A", lwd = 2, lty = 2)
+legend("topright", legend = c("Média", "Mediana (coincide com a média)"),
+       col = c("#C0392B", "#214A9A"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
+
+```
+
+**Análise:** todas as nove capturas apresentaram **90,2% de ocupação**, deixando **9,8% disponível**. Média e mediana coincidem e suas linhas ficam sobrepostas. A concentração em uma única faixa descreve constância nesta janela, não um erro do gráfico.
+
+**Utilidade na dashboard:** fundamenta os indicadores de disco ocupado e espaço disponível. Um recurso pode precisar de atenção por sua ocupação absoluta, mesmo sem oscilar. Não é possível estimar tempo até o disco lotar ou velocidade de crescimento com estes 17 segundos e valores constantes; isso exigiria histórico mais longo.
+
+### 4. Boxplots — há variações ou valores fora do padrão?
+
+A caixa resume a região central dos dados, e os pontos isolados são possíveis outliers pela regra de 1,5 vezes o intervalo interquartil. **Outlier estatístico não é sinônimo de alerta operacional.** Os limites de alerta são regras do negócio configuradas no sistema.
+
+#### 4.1 CPU
+
+```{r echo=FALSE}
+boxplot(dados$CPU, main = "CPU: variação e possível outlier",
+        ylab = "Uso da CPU (%)", ylim = c(0, 30), col = "#98B6F4")
+cat("Valores identificados como outliers de CPU (%):\n")
+print(boxplot.stats(dados$CPU)$out)
+```
+
+**Análise:** o valor de **26,4%** é identificado como outlier porque está acima do padrão das outras capturas. A região central da amostra vai de 10,3% a 15,4%, com mediana de 12,6%. Embora seja um destaque estatístico, 26,4% não representa, por si só, saturação de CPU.
+
+**Utilidade na dashboard:** sustenta a necessidade de um histórico para investigar picos que o card atual pode deixar de mostrar. Antes de gerar um incidente, é necessário comparar a medição ao parâmetro operacional; a classificação de outlier não deve substituir esse parâmetro.
+
+#### 4.2 RAM
+
+```{r echo=FALSE}
+boxplot(dados$RAM, main = "RAM: pequena variação em ocupação elevada",
+        ylab = "Uso da RAM (%) — escala ampliada", ylim = c(86.4, 87.5),
+        col = "#F1D384")
+cat("Valores identificados como outliers de RAM (%):\n")
+print(boxplot.stats(dados$RAM)$out)
+```
+
+**Análise:** a mediana foi **87,1%** e o desvio padrão aproximadamente **0,24 p.p.**. O valor de 86,6% aparece como outlier inferior devido à pequena dispersão das demais capturas. Isso não indica que uma redução do consumo seja um problema: a regra estatística apenas destaca uma diferença relativa.
+
+**Utilidade na dashboard:** demonstra por que o status não deve depender apenas da variação. É necessário observar também o percentual absoluto de uso e o limite de RAM. Uma memória estável pode continuar muito ocupada, enquanto um ponto fora da caixa pode representar uma pequena redução sem relevância operacional.
+
+#### 5.3 Disco
+
+```{r echo=FALSE}
+boxplot(dados$DISCO, main = "Disco: ocupação constante na janela",
+        ylab = "Disco ocupado (%) — escala ampliada", ylim = c(89.5, 91),
+        col = "#9DD6BF")
+cat("Desvio padrão do disco (p.p.):", sd(dados$DISCO), "\n")
+cat("Outliers de disco (%):\n")
+print(boxplot.stats(dados$DISCO)$out)
+```
+
+**Análise:** o boxplot se resume a um traço em **90,2%** porque todos os valores são iguais. O desvio padrão é zero e não existem outliers nesta amostra. Não há problema de execução: a caixa não possui altura quando os quartis coincidem.
+
+**Utilidade na dashboard:** justifica manter a ocupação e o espaço disponível em destaque, mesmo quando a linha histórica fica horizontal. A ausência de variação não significa grande capacidade livre. Este gráfico não mede atividade do disco, taxa de transferência ou tempo de resposta.
+
+### 5. Correlação linear — CPU e RAM aumentam juntas?
+
+Usamos Pearson para descrever a associação linear entre CPU e RAM medidas nos mesmos instantes. O coeficiente `r` varia de -1 a 1. Um valor próximo de zero indica associação linear fraca na amostra, não ausência de qualquer relação possível.
+
+Uma reta com `lm()` será desenhada apenas como apoio visual; não é um modelo validado para previsão. Não calculamos correlação com disco porque ele é constante: sem variação, o coeficiente não é definido.
+
+```{r echo=FALSE}
+if (sd(dados$CPU) > 0 & sd(dados$RAM) > 0) {
+  correlacao <- cor(dados$CPU, dados$RAM, method = "pearson")
+  ajuste <- lm(RAM ~ CPU, data = dados)
+  
+  plot(dados$CPU, dados$RAM,
+       main = "CPU e RAM: associação linear na amostra",
+       xlab = "Uso da CPU (%)", ylab = "Uso da RAM (%) — escala ampliada",
+       pch = 19, col = "#214A9A", ylim = c(86.4, 87.5))
+  abline(ajuste, col = "#C0392B", lwd = 2)
+  legend("bottomright", legend = c("Capturas", "Reta descritiva"),
+         col = c("#214A9A", "#C0392B"), pch = c(19, NA),
+         lty = c(NA, 1), bty = "n")
+  
+  cat("Correlação de Pearson entre CPU e RAM:", round(correlacao, 4), "\n")
+} else {
+  cat("Não é possível calcular Pearson quando uma das variáveis é constante.\n")
+}
+
+if (sd(dados$DISCO) == 0) {
+  cat("Disco constante: correlações envolvendo DISCO não foram calculadas.\n")
+}
+
+```
+
+**Análise:** a correlação foi **r ≈ 0,0658**, uma associação linear positiva muito fraca, praticamente nula nesta amostra. Os picos de CPU não vieram acompanhados de aumentos proporcionais de RAM. A variação da RAM foi pequena mesmo quando a CPU chegou a 26,4%.
+
+**Utilidade na dashboard:** fundamenta manter indicadores e históricos separados para CPU e RAM, sem usar um como substituto do outro. Comparar os componentes no mesmo período pode orientar a investigação de possíveis sobrecargas. Uma futura visualização de correlação ajudaria a levantar hipóteses de associação, mas **não comprovaria que um componente causa o consumo do outro**.
+
+O resultado não deve ser generalizado: temos nove observações consecutivas, de um único equipamento e uma janela curta. Ele não demonstra independência entre CPU e RAM, nem descarta relações não lineares ou com atraso temporal. A correlação não substitui os gráficos ao longo do tempo.
+
+### 6. Relação com os parâmetros de alerta existentes
+
+\
+O `dash_servidor.js` enviado utiliza limites ilustrativos de **CPU 80%, RAM 75% e disco 75%**. A classificação do JavaScript considera crítico quando o valor é maior ou igual ao limite e atenção a partir de 70% desse limite.
+
+A API/banco, por outro lado, permitem configurar `limite_atencao` e `limite_critico` em `parametro_alerta`. Não devemos presumir que atenção seja sempre 70% do crítico, nem aplicar a este notebook limites dos seeds de outro equipamento.
+
+A tabela seguinte faz somente uma **comparação ilustrativa com os limites do frontend**. Não representa os parâmetros confirmados para o notebook capturado e não conta incidentes reais.
+
+```{r echo=FALSE}
+# Referências ilustrativas copiadas dos limites de dash_servidor.js.
+# Na integração real, utilizar os parâmetros do equipamento consultados pela API.
+limites_exemplo <- c(CPU = 80, RAM = 75, DISCO = 75)
+
+comparacao <- data.frame(
+  Componente = componentes,
+  Limite_ilustrativo_percentual = as.numeric(limites_exemplo),
+  Leituras_no_ou_acima_do_limite = c(
+    sum(dados$CPU >= limites_exemplo["CPU"]),
+    sum(dados$RAM >= limites_exemplo["RAM"]),
+    sum(dados$DISCO >= limites_exemplo["DISCO"])
+  )
+)
+comparacao$Total_de_leituras <- nrow(dados)
+print(comparacao, row.names = FALSE)
+
+```
+
+**Interpretação:** usando apenas essas referências ilustrativas, a CPU ficou abaixo do limite nas nove capturas; RAM e disco ficaram no ou acima do limite nas nove. Isso evidencia a utilidade de limites específicos por componente e do status junto ao valor de utilização.
+
+**Nove leituras acima do limite não são nove alertas ativos.** As capturas podem pertencer à mesma situação contínua. Contar incidentes ou chamados exige regras de abertura/fechamento, identificação do evento e histórico do sistema/Jira. Não estimamos duração do problema ou quantidade de chamados com esta tabela.
+
+### 
+
+### 8. O que esta análise fundamenta — e o que exige outros dados
+
+| Métrica ou gráfico da dashboard | Contribuição desta análise | Limitação/dado adicional |
+|------------------------|------------------------|------------------------|
+| Uso atual de CPU e RAM | Última leitura mostra a situação mais recente; distribuições e boxplots contextualizam o valor. | A amostra não valida desempenho de toda a operação. |
+| Disco ocupado e espaço disponível | 90,2% ocupado e 9,8% livre mostram por que a capacidade restante precisa aparecer. | Não há tamanho total em GB no CSV nem previsão confiável de esgotamento. |
+| Históricos de CPU/RAM/disco com limites | O pico de CPU e a ocupação persistente de RAM/disco justificam preservar a evolução por componente e a referência de alerta. | Histogramas/boxplots não mostram a ordem temporal. O site precisa usar timestamps reais e limites do equipamento. |
+| Comparação CPU × RAM | A correlação mostra que acompanhar um componente não substitui medir o outro. | Análise de associação; não é indicador causal ou previsão de falha. Não há gráfico de correlação implementado no frontend enviado. |
+| Latência e throughput | Não avaliados neste notebook. | Precisam de medições de rede com unidades e timestamps; os exemplos do frontend não são dados reais da amostra. |
+| Servidores ativos, disponibilidade e downtime | Não calculados. CPU baixa/alta não define equipamento online/offline. | Precisam de histórico de verificações de disponibilidade, critérios de estado e duração dos intervalos. |
+| Alertas ativos/críticos e incidentes por servidor/componente | A comparação com parâmetros demonstra a função dos limites, não o total de eventos. | Precisam de eventos identificados, equipamento/componente, nível e estado de resolução. |
+| Tempo médio de resolução | Não calculado. | Precisa de abertura e resolução de cada incidente concluído; consumo percentual não permite calcular esse tempo. |
+| Orçamento anual de indisponibilidade | Não calculado. | Precisa de meta de disponibilidade, período anual definido e duração real das indisponibilidades. |
+
+#### Conclusão
+
+A amostra mostra três comportamentos distintos: **CPU com consumo baixo e um pico relativo**, **RAM com ocupação elevada e pouca variação** e **disco com ocupação elevada e constante**. Essas diferenças fundamentam os cards e históricos separados por componente: um único indicador de “saúde” esconderia informações relevantes.
+
+Os histogramas descrevem as faixas de uso; os boxplots destacam a variação e possíveis valores fora do padrão; a correlação investiga se CPU e RAM acompanham uma à outra. Os limites operacionais continuam sendo configurações do projeto, não conclusões automáticas desses gráficos.
+
+Esta análise oferece uma justificativa exploratória para as métricas de utilização e capacidade, mas não valida sozinha todas as KPIs de serviço. Para ampliar a avaliação, será necessário coletar mais equipamentos e períodos, preservar timestamps e associar as medições aos limites e eventos corretos. Não foram gerados dados sintéticos nem alterados arquivos da aplicação ou do banco.
