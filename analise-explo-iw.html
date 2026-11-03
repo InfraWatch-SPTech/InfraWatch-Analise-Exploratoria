@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Exploratória</title>
+</head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:ital@0;1&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5% 20%;
+    color: #170F38;
+    font-family: "Montserrat", sans-serif;
+    height: auto;
+    gap: 150px;
+    width: 100%;
+  }
+
+  .titulo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 12vh;
+    margin: 50px 0px;
+  }
+
+  .titulo h1 {
+    font-size: 40px;
+    font-weight: 800;
+  }
+
+  .titulo h4 {
+    font-size: 12px;
+    color: #5178F9;
+    background-color: white;
+    border: 1px solid #5178F9;
+    padding: 10px 20px;
+  }
+
+  .box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 25px;
+    width: 90%;
+  }
+
+  h3 {
+    font-size: 24px;
+    text-transform: uppercase;
+  }
+
+  pre {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    padding: 10px;
+    width: 80%;
+    background-color: rgb(243, 243, 243);
+    border: 1px solid rgb(186, 186, 186);
+  }
+
+  p code {
+    background-color: rgb(233, 236, 240);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgb(200, 202, 206);
+  }
+
+  .titulo-posicao {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+
+  .posicao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #5178F9;
+    color: white;
+    width: 80px;
+    height: 35px;
+    font-weight: 800;
+    font-size: 20px;
+  }
+
+  img {
+    width: 70%;
+    height: auto;
+    align-self: center;
+  }
+
+  .extra {
+    width: 35%;
+  }
+
+  .tabela-amostra {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 2px solid #8D9BF7;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 15px;
+    color: #1B1A3F;
+  }
+
+  .tabela-amostra th {
+    background: #5178F9;
+    color: #fff;
+    font-weight: 600;
+    text-align: start;
+    padding: 12px 14px;
+  }
+  .tabela-amostra td {
+    padding: 11px 14px;
+  }
+
+  .tabela-amostra tbody tr:nth-child(even) td {
+    background: #F4F6FF;
+  }
+
+  .tabela-amostra td.num,
+  .tabela-amostra th.num {
+    text-align: center;
+  }
+
+  .dados-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .dados-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-evenly;
+  padding: 10px;
+  width: 20%;
+  height: 12vh;
+  border: 1px solid #5178F9;
+  }
+
+  .dados-box span {
+    font-size: 34px;
+    font-weight: 800;
+    color: #1B1A3F;
+  }
+
+  .outros-extra {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+</style>
+<body>
+  <div class="box">
+    <div class="titulo">
+      <h1>Análise Exploratória</h1>
+      <h4>Equipe InfraWatch</h4>
+    </div>
+
+    <div class="titulo-posicao">
+      <div class="posicao">1</div>
+      <h3>Carregar a amostra e conferir a qualidade</h3>
+    </div>
+    <table class="tabela-amostra">
+        <thead>
+            <tr>
+                <th>Hostname</th>
+                <th>Timestamp</th>
+                <th>CPU (%)</th>
+                <th>RAM (%)</th>
+                <th>Disco (%)</th>
+                <th>Qtd. processos</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:37</td><td>8,3</td><td >87,2</td><td>90,2</td><td>281</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:39</td><td>12,6</td><td >87,1</td><td>90,2</td><td>281</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:41</td><td>26,4</td><td >87,2</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:43</td><td>16,9</td><td >87,0</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:46</td><td>12,6</td><td >87,1</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:48</td><td>10,3</td><td >87,3</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:50</td><td>12,6</td><td >87,2</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:52</td><td>15,4</td><td >86,6</td><td>90,2</td><td>280</td></tr>
+            <tr><td>LAPTOP-TQPP5J6D</td><td>2026-10-05 04:56:54</td><td>9,0</td><td >86,7</td><td>90,2</td><td>280</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Leitura da amostra</h4>
+
+    <div class="dados-content">
+      <div class="dados-box">Qtd de registros: <span>9</span></div>
+      <div class="dados-box">Qtd de equipamentos: <span>1</span></div>
+      <div class="dados-box">Tempo entre 1° e última: <span>17</span></div>
+      <div class="dados-box">Intervalo entre capturas: <span>2s</span></div>
+    </div>
+
+
+  </div>
+
+  <div class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">2</div>
+      <h3>Indicadores que podemos calcular</h3>
+    </div>
+    
+    <p>Olhar somente o último valor esconde o pico registrado anteriormente.</p>
+
+    <table class="tabela-amostra">
+        <thead>
+            <tr>
+                <th>Componente</th>
+                <th>Último %</th>
+                <th>Media</th>
+                <th>Mediana</th>
+                <th>Mínimo</th>
+                <th>Máximo</th>
+                <th>Desvio Padrão</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>CPU</td><td><b>9.0</b></td><td>13.79</td><td >12.6</td><td>8.3</td><td><b>26.4</b></td><td>5.49</td></tr>
+            <tr><td>RAM</td><td>86.7</td><td>87.04</td><td >87.1</td><td>86.6</td><td>87.3</td><td>0.24</td></tr>
+            <tr><td>DISCO</td><td>90.2</td><td>90.20</td><td >90.2</td><td>90.2</td><td>90.2</td><td>0.00</td></tr>
+        </tbody>
+    </table>
+
+    <div class="dados-content">
+      <div class="dados-box">Espaço disponível última captura: <span>90.2</span></div>
+      <div class="dados-box">% CPU mínimo: <span>8.3</span></div>
+      <div class="dados-box">% CPU máximo: <span>26.4</span></div>
+      <div class="dados-box">% de RAM última captura: <span>86.7</span></div>
+    </div>
+    
+
+  </div>
+
+  <div class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">3</div>
+      <h3>Histogramas — em quais faixas os consumos se concentram?</h3>
+    </div>
+
+    <p>Um histograma conta quantas capturas ficaram em cada faixa de utilização.</p>
+
+    <h4>Ex: Histograma CPU</h4>
+    <img src="/Imagens/g1-dist-cpu.png" alt="Histograma de % de utilização de CPU">
+
+    <p><strong>Utilidade na dashboard:</strong> O histórico de CPU permite verificar se um valor alto é pontual ou repetido. O histograma fundamenta essa leitura da frequência dos níveis de consumo, mas não mostra a ordem temporal do pico.</p>
+
+    <div class="dados-content" style="justify-content: space-evenly;">
+      <div class="dados-box" style="width: 30%;">Tipo <span>Assimétrica</span></div>
+      <div class="dados-box" style="width: 30%;">Concentração de valores: <span>10% - 15%</span></div>
+    </div>
+
+    <br style="height: 100px;">
+
+    <h4>Histograma de outros componentes</h4>
+
+    <div class="outros-extra">
+      <img class="extra" src="/Imagens/g2-dist-ram.png" alt="Histograma de % de utilização da RAM">
+      <img class="extra" src="/Imagens/g3-dist-disco.png" alt="Histograma de % de utilização de disco">
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">4</div>
+      <h3>Boxplots — há variações ou valores fora do padrão?</h3>
+    </div>
+
+    <p><strong>Outlier estatístico não é sinônimo de alerta operacional.</strong> Os limites de alerta são regras do negócio configuradas no sistema.</p>
+
+    <h4>Ex: Boxplot CPU</h4>
+
+    <img src="/Imagens/g4-var-cpu.png" alt="Gráfico de variação de CPU">
+
+    <div class="dados-content" style="justify-content: space-evenly;">
+      <div class="dados-box" style="width: 30%;">Outlier identificado:<span>26.4</span></div>
+      <div class="dados-box" style="width: 30%;">Amplitude:<span>Baixa</span></div>
+    </div>
+    
+    <br style="height: 100px;">
+
+    <p><strong>Análise:</strong> Embora seja um destaque estatístico, <strong>26,4% não representa</strong>, por si só, saturação de CPU.</p>
+    <p><strong>Utilidade na dashboard:</strong> sustenta a necessidade de um histórico. Antes de gerar um incidente, é necessário comparar a medição ao parâmetro operacional.</p>
+    
+    <br style="height: 100px;">
+
+    <h4>Boxplots de outros componentes</h4>
+    <div class="outros-extra">
+      <img class="extra" src="/Imagens/g5-var-ram.png" alt="Gráfico de variação de RAM">
+      <img class="extra" src="/Imagens/g6-var-disco.png" alt="Gráfico de variação de DISCO">
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">5</div>
+      <h3>Correlação linear — CPU e RAM aumentam juntas?</h3>
+    </div>
+
+    <p>Usamos Pearson para descrever a associação linear entre CPU e RAM medidas nos mesmos instantes.</p>
+
+    <img src="/Imagens/g7-corr-cpu-ram.png" alt="Gráfico de correlação entre CPU e RAM">
+
+    <div class="dados-content" style="justify-content: space-evenly;">
+      <div class="dados-box" style="width: 30%;">Correlação:<span>≈0.0658</span></div>
+      <div class="dados-box" style="width: 30%;">Necessidade de análise:<span>Individual</span></div>
+      <div class="dados-box" style="width: 30%;">Previsibilidade:<span>Baixa</span></div>
+    </div>
+
+    <p><strong>Utilidade na dashboard:</strong> fundamenta manter indicadores e históricos separados para CPU e RAM, sem usar um como substituto do outro. Comparar os componentes no mesmo período pode orientar a investigação de possíveis sobrecargas. Uma futura visualização de correlação ajudaria a levantar hipóteses de associação, mas <strong>não comprovaria que um componente causa o consumo do outro</strong>.</p>
+  </div>
+
+  <div class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">6</div>
+      <h3>Relação com os parâmetros de alerta existentes</h3>
+    </div>
+    
+    <p><br/> O <code>dash_servidor.js</code> enviado utiliza limites default de <strong>CPU 80%, RAM 75% e DISCO 75%</strong>. Por outro lado, o Back-End do site permite configurar limite_atencao e limite_critico em parametro_alerta.</p>
+
+    <table class="tabela-amostra" style="width: 50%; align-self: center;">
+        <thead>
+            <tr>
+                <th>Componente</th>
+                <th>Limite Crítico</th>
+                <th>Leituras acima do limite</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>CPU</td><td>80</td><td>0</td></tr>
+            <tr><td>RAM</td><td>75</td><td>9</td></tr>
+            <tr><td>DISCO</td><td>75</td><td>9</td></tr>
+        </tbody>
+    </table>
+
+    <div class="dados-content" style="justify-content: space-between;">
+      <div class="dados-box" style="width: 30%;">Parametrização:<span>>= limite</span></div>
+      <div class="dados-box" style="width: 33%;">Valores:<span>Customizável</span></div>
+      <div class="dados-box" style="width: 30%;">Em alerta:<span>RAM/DISCO</span></div>
+    </div>
+
+    <p><strong>Interpretação:</strong> usando apenas as referências default, a CPU ficou abaixo do limite nas nove capturas; RAM e disco ficaram no ou acima do limite nas nove. Isso evidencia a utilidade de limites específicos por componente e do status junto ao valor de utilização.</p>
+
+    <p><strong>Nove leituras acima do limite não são nove alertas ativos.</strong> As capturas podem pertencer à mesma situação contínua. Contar incidentes ou chamados exige regras de abertura/fechamento, identificação do evento e histórico do sistema/Jira.</p>
+  </div>
+
+  <div  class="box">
+    <div class="titulo-posicao">
+      <div class="posicao">7</div>
+      <h3>O que esta análise fundamenta — e o que exige outros dados</h3>
+    </div>
+
+    <h4>Conclusão</h4>
+
+    <div class="dados-content" style="justify-content: space-between;">
+      <div class="dados-box" style="width: 30%;">Indicadores de saúde:<span>+1 p/ comp</span></div>
+      <div class="dados-box" style="width: 30%;">Gráficos:<span>Individuais</span></div>
+      <div class="dados-box" style="width: 30%;">Normas de alerta:<span>Open/Close</span></div>
+    </div>
+
+    <p>A amostra mostra três comportamentos distintos: <strong>CPU com consumo baixo e um pico relativo</strong>, <strong>RAM com ocupação elevada e pouca variação</strong> e <strong>disco com ocupação elevada e constante</strong>. Essas diferenças fundamentam os cards e históricos separados por componente: um único indicador de “saúde” esconderia informações relevantes.</p>
+  </div>
+</body>
+</html>
